@@ -1,0 +1,1 @@
+# Stores all our settings and configurations 
