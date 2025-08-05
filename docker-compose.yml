@@ -1,0 +1,25 @@
+services:
+  order-agent-service:
+    build: ./order-agent-service
+    container_name: order-agent-service
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  policy-agent-service:
+    build: ./policy-agent-service
+    container_name: policy-agent-service
+    volumes:
+      - ./policy-agent-service/vector_store:/app/vector_store
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  router-agent-service:
+    build: ./router-agent-service
+    container_name: router-agent-service
+    ports:
+      - "8002:8002"
+    depends_on:
+      - order-agent-service
+      - policy-agent-service
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

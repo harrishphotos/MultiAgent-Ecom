@@ -169,6 +169,7 @@ config_local.py
 *.faiss
 chroma_db/
 vector_store/
+policy-agent-service/vector_store/
 
 # Ollama models (if downloaded locally)
 ollama_models/

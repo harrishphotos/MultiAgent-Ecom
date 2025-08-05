@@ -1,4 +1,7 @@
 # The logic for the agent that checks order status 
+from fastapi import FastAPI
+app = FastAPI()
+
 
 ORDERS_DB = {
     "ORD123": {
@@ -39,4 +42,13 @@ def look_up_order( order_id: str) -> str:
     return f"Sorry, I could not find details on Order ID '{order_id}'."
 
 
-        
+@app.get("/lookup/{order_id}")
+async def lookup_order_api(order_id: str):
+    result = look_up_order(order_id)
+    return {"result": result}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+

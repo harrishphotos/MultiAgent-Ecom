@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MultiAgent E-commerce Assistant</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #555;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+        box-sizing: border-box;
+      }
+      input[type="text"]:focus {
+        border-color: #007bff;
+        outline: none;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        width: 100%;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      .response {
+        margin-top: 30px;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-left: 4px solid #007bff;
+        border-radius: 5px;
+      }
+      .response h3 {
+        margin-top: 0;
+        color: #007bff;
+      }
+      .examples {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #e9f4ff;
+        border-radius: 5px;
+      }
+      .examples h4 {
+        margin-top: 0;
+        color: #0056b3;
+      }
+      .examples ul {
+        margin: 10px 0;
+        padding-left: 20px;
+      }
+      .examples li {
+        margin-bottom: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🤖 MultiAgent E-commerce Assistant</h1>
+
+      <form method="post">
+        <div class="form-group">
+          <label for="query">Ask me anything about orders or policies:</label>
+          <input
+            type="text"
+            id="query"
+            name="query"
+            placeholder="e.g. What's the status of order ORD123?"
+            value="{{ query if query else '' }}"
+          />
+        </div>
+        <button type="submit">Ask Assistant</button>
+      </form>
+
+      {% if response %}
+      <div class="response">
+        <h3>Response:</h3>
+        <p style="white-space: pre-line">{{ response }}</p>
+      </div>
+      {% endif %}
+
+      <div class="examples">
+        <h4>💡 Try these examples:</h4>
+        <ul>
+          <li>
+            <strong>Order Status:</strong> "What's the status of order ORD123?"
+          </li>
+          <li><strong>Refund Policy:</strong> "What is your refund policy?"</li>
+          <li><strong>General:</strong> "How long does shipping take?"</li>
+        </ul>
+      </div>
+    </div>
+  </body>
+</html>
