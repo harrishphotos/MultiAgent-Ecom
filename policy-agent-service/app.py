@@ -19,10 +19,13 @@ logger = logging.getLogger(__name__)
 # Directory where the FAISS vector store will be saved/loaded
 VECTOR_STORE_DIR = Path(__file__).resolve().parent / "vector_store"
 
+
 class PolicyQuery(BaseModel):
     query: str
 
+
 app = FastAPI()
+
 
 # --- Initialization Function (No Retry) ---
 def initialize_policy_agent():
@@ -35,7 +38,9 @@ def initialize_policy_agent():
 
         # 1. Initialize Ollama models
         llm = Ollama(model=LLM_MODEL, base_url=OLLAMA_BASE_URL)
-        embeddings_model = OllamaEmbeddings(model=EMBEDDING_MODEL, base_url=OLLAMA_BASE_URL)
+        embeddings_model = OllamaEmbeddings(
+            model=EMBEDDING_MODEL, base_url=OLLAMA_BASE_URL
+        )
         logger.info("Ollama models connected.")
 
         # 2. Load or create vector store
@@ -44,17 +49,19 @@ def initialize_policy_agent():
             vector_store = FAISS.load_local(
                 str(VECTOR_STORE_DIR),
                 embeddings_model,
-                allow_dangerous_deserialization=True
+                allow_dangerous_deserialization=True,
             )
         else:
             logger.info("Creating new vector store (first run)...")
 
-            with open(POLICY_FILE_PATH, 'r', encoding='utf-8') as f:
+            with open(POLICY_FILE_PATH, "r", encoding="utf-8") as f:
                 policy_text = f.read()
             logger.info("Policy document loaded.")
 
             docs = [Document(page_content=policy_text)]
-            text_splitter = RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=10)
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=100, chunk_overlap=10
+            )
             split_docs = text_splitter.split_documents(docs)
             logger.info("Documents split into chunks.")
 
@@ -69,7 +76,7 @@ def initialize_policy_agent():
         # 3. Create RAG chain
         rag_prompt = ChatPromptTemplate.from_template(
             """
-            Answer the user's question based ONLY on the following context:
+            you are a polite customer support agent and Answer the user's question based ONLY on the following context:
             Context:
             {context}
 
@@ -87,23 +94,29 @@ def initialize_policy_agent():
         logger.critical("❌ Failed to initialize policy agent: %s", e)
         return None
 
+
 # --- Application Startup Event ---
 @app.on_event("startup")
 def on_startup():
     app.state.policy_agent = initialize_policy_agent()
 
+
 @app.post("/policy_query")
 async def policy_query_api(policy_query: PolicyQuery, request: Request):
     if not policy_query.query:
         return {"error": "Query not provided"}
-    
+
     policy_agent = request.app.state.policy_agent
     if policy_agent is None:
-        return {"error": "Policy agent is not available due to an initialization failure. Please check the service logs."}
+        return {
+            "error": "Policy agent is not available due to an initialization failure. Please check the service logs."
+        }
 
     response = await policy_agent.ainvoke({"input": policy_query.query})
     return {"answer": response["answer"]}
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8001)
