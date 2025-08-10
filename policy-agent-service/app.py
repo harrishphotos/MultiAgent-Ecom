@@ -2,15 +2,11 @@ from pathlib import Path
 import logging
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
-from langchain_community.llms.ollama import Ollama
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.chains.retrieval import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.documents import Document
-from config import LLM_MODEL, EMBEDDING_MODEL, POLICY_FILE_PATH, OLLAMA_BASE_URL
+from config import EMBEDDING_MODEL, POLICY_FILE_PATH, OLLAMA_BASE_URL
 
 # --- Logging Configuration ---
 logging.basicConfig(level=logging.INFO)
@@ -36,12 +32,11 @@ def initialize_policy_agent():
     try:
         logger.info("Initializing Policy Agent...")
 
-        # 1. Initialize Ollama models
-        llm = Ollama(model=LLM_MODEL, base_url=OLLAMA_BASE_URL)
+        # 1. Initialize Ollama model
         embeddings_model = OllamaEmbeddings(
             model=EMBEDDING_MODEL, base_url=OLLAMA_BASE_URL
         )
-        logger.info("Ollama models connected.")
+        logger.info("Ollama model connected.")
 
         # 2. Load or create vector store
         if (VECTOR_STORE_DIR / "index.faiss").exists():
@@ -73,22 +68,8 @@ def initialize_policy_agent():
         retriever = vector_store.as_retriever()
         logger.info("Vector store ready.")
 
-        # 3. Create RAG chain
-        rag_prompt = ChatPromptTemplate.from_template(
-            """
-            you are a polite customer support agent and Answer the user's question based ONLY on the following context:
-            Context:
-            {context}
-
-            Question:
-            {input}
-            """
-        )
-        stuff_chain = create_stuff_documents_chain(llm, rag_prompt)
-        rag_chain = create_retrieval_chain(retriever, stuff_chain)
-
         logger.info("✅ Policy agent initialized successfully.")
-        return rag_chain
+        return retriever
 
     except Exception as e:
         logger.critical("❌ Failed to initialize policy agent: %s", e)
@@ -98,7 +79,7 @@ def initialize_policy_agent():
 # --- Application Startup Event ---
 @app.on_event("startup")
 def on_startup():
-    app.state.policy_agent = initialize_policy_agent()
+    app.state.retriever = initialize_policy_agent()
 
 
 @app.post("/policy_query")
@@ -106,14 +87,15 @@ async def policy_query_api(policy_query: PolicyQuery, request: Request):
     if not policy_query.query:
         return {"error": "Query not provided"}
 
-    policy_agent = request.app.state.policy_agent
-    if policy_agent is None:
+    retriever = request.app.state.retriever
+    if retriever is None:
         return {
-            "error": "Policy agent is not available due to an initialization failure. Please check the service logs."
+            "error": "retriever is not available due to an initialization failure. Please check the service logs."
         }
 
-    response = await policy_agent.ainvoke({"input": policy_query.query})
-    return {"answer": response["answer"]}
+    response = await retriever.ainvoke(policy_query.query)
+    context = "\n\n".join([doc.page_content for doc in response])
+    return {"policy_context": context}
 
 
 if __name__ == "__main__":
